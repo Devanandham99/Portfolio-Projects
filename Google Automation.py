@@ -30,6 +30,7 @@ def googling(name):
     time.sleep(3)
 
 table = pd.read_csv("C:/Users/devanandham/Python Data scrapping/Database/Trade India/TradeIndiaOutput.csv")
+#File location is an example. In actual usecase data is pushed directly to AWS
 
 city= table['City']
 comp=table['Company Name']
@@ -38,4 +39,3 @@ for i in range(len(comp)):
     table['Contact Number']=googling(url)
     #Getting the contact number by searching for the company name and city. 
 table.to_csv("C:/Users/devanandham/Python Data scrapping/Database/Trade India/TradeIndiaOutputContact.csv", index=False)
-
