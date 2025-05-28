@@ -1,0 +1,202 @@
+const HUBSPOT_API_KEY = 'xyz';
+const ALL_DEALS_SHEET = 'All Deals';
+const BATCH_LIMIT = 100;
+
+const PROPERTIES = {
+  quoteDate: 'customer_quote_date',
+  totalCost: 'total_cost____',
+  intercompany: 'intercompany_deal',
+  quoteRef: 'quote_reference_number',
+  fTotalCost: 'f_total_cost__calculation_',
+  country: 'region_country',
+  enquiryDate: 'enquiry_date',
+  invoiceDate: 'invoice_date',
+  erithEntity: 'erith_entity',
+  fMargin: 'f_margin__',
+  aMargin: 'margin__',
+  salesManager: 'sales_manager'
+};
+
+function startDailySync() {
+
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ALL_DEALS_SHEET);
+  if (sheet) {
+    sheet.clearContents();
+  }
+  PropertiesService.getScriptProperties().deleteProperty('last_after');
+  fetchDealsInChunks();
+  create5MinuteSyncTrigger();
+}
+
+function create5MinuteSyncTrigger() {
+  const triggers = ScriptApp.getProjectTriggers();
+  const alreadyExists = triggers.some(trigger =>
+    trigger.getHandlerFunction() === 'fetchDealsInChunks'
+  );
+  if (!alreadyExists) {
+    ScriptApp.newTrigger('fetchDealsInChunks')
+      .timeBased()
+      .everyMinutes(5)
+      .create();
+    Logger.log('5-minute interval trigger created.');
+  }
+}
+
+function fetchDealsInChunks() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ALL_DEALS_SHEET);
+  if (!sheet) {
+    SpreadsheetApp.getUi().alert(`Sheet named "${ALL_DEALS_SHEET}" not found.`);
+    return;
+  }
+
+  const props = PropertiesService.getScriptProperties();
+  const stageLabelMap = getDealStageLabelMap();
+  const assocTypeMap = getDealToCompanyAssociationTypeMap();
+  const PRIMARY_LABEL_ID = Object.keys(assocTypeMap).find(key => assocTypeMap[key] === 'DEAL_TO_COMPANY');
+
+  const baseUrl = 'https://api.hubapi.com';
+  const propertyKeys = [
+    'dealname',
+    'amount_in_home_currency',
+    'dealstage',
+    ...Object.values(PROPERTIES)
+  ].join(',');
+
+  let after = props.getProperty('last_after') || '';
+  let url = `${baseUrl}/crm/v3/objects/deals?limit=${BATCH_LIMIT}&properties=${propertyKeys}`;
+  if (after) url += `&after=${after}`;
+
+  const headers = {
+    Authorization: `Bearer ${HUBSPOT_API_KEY}`,
+    'Content-Type': 'application/json'
+  };
+
+  const response = UrlFetchApp.fetch(url, { method: 'get', headers });
+  const data = JSON.parse(response.getContentText());
+
+  if (!after && sheet.getLastRow() === 0) {
+    sheet.appendRow([
+      'Deal ID',
+      'Deal Name',
+      'Amount (Company Currency)',
+      'Customer Quote Date',
+      'A Total Cost',
+      'F Total Cost',
+      'F Margin %',
+      'A Margin %',
+      'Intercompany Deal',
+      'Quote Reference Number',
+      'Country',
+      'Enquiry Date',
+      'Invoice Date',
+      'Erith Entity',
+      'Sales Manager',
+      'Deal Stage',
+      'Primary Company'
+    ]);
+  }
+
+  for (const deal of data.results || []) {
+    const p = deal.properties || {};
+    const dealStageName = stageLabelMap[p.dealstage] || p.dealstage || '';
+    const primaryCompanyName = getPrimaryCompanyName(deal.id, PRIMARY_LABEL_ID, headers);
+
+    sheet.appendRow([
+      deal.id,
+      p.dealname || '',
+      p.amount_in_home_currency || '',
+      formatDate(p[PROPERTIES.quoteDate]),
+      p[PROPERTIES.totalCost] || '',
+      p[PROPERTIES.fTotalCost] || '',
+      p[PROPERTIES.fMargin] || '',
+      p[PROPERTIES.aMargin] || '',
+      p[PROPERTIES.intercompany] || '',
+      p[PROPERTIES.quoteRef] || '',
+      p[PROPERTIES.country] || '',
+      formatDate(p[PROPERTIES.enquiryDate]),
+      formatDate(p[PROPERTIES.invoiceDate]),
+      p[PROPERTIES.erithEntity] || '',
+      p[PROPERTIES.salesManager] || '',
+      dealStageName,
+      primaryCompanyName
+    ]);
+  }
+
+  if (data.paging?.next?.after) {
+    props.setProperty('last_after', data.paging.next.after);
+    Logger.log(`More deals to fetch. Saved cursor: ${data.paging.next.after}`);
+  } else {
+    props.deleteProperty('last_after');
+
+    // Remove 5-minute trigger
+    const triggers = ScriptApp.getProjectTriggers();
+    for (const trigger of triggers) {
+      if (trigger.getHandlerFunction() === 'fetchDealsInChunks') {
+        ScriptApp.deleteTrigger(trigger);
+      }
+    }
+
+    Logger.log('All deals fetched. 5-minute trigger removed.');
+  }
+}
+
+function formatDate(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (isNaN(date)) return '';
+  return Utilities.formatDate(date, Session.getScriptTimeZone(), 'MM-dd-yyyy');
+}
+
+function getPrimaryCompanyName(dealId, primaryLabelId, headers) {
+  const url = `https://api.hubapi.com/crm/v4/objects/deal/${dealId}/associations/companies`;
+  const response = UrlFetchApp.fetch(url, { method: 'get', headers });
+  const data = JSON.parse(response.getContentText());
+
+  for (const assoc of data.results || []) {
+    if (assoc.associationTypeId == primaryLabelId) {
+      const companyId = assoc.toObjectId;
+      const companyUrl = `https://api.hubapi.com/crm/v3/objects/companies/${companyId}?properties=name`;
+      const companyRes = UrlFetchApp.fetch(companyUrl, { method: 'get', headers });
+      const companyData = JSON.parse(companyRes.getContentText());
+      return companyData.properties?.name || '';
+    }
+  }
+
+  return '';
+}
+
+function getDealStageLabelMap() {
+  const map = {};
+  const url = 'https://api.hubapi.com/crm/v3/pipelines/deals';
+  const headers = {
+    Authorization: `Bearer ${HUBSPOT_API_KEY}`,
+    'Content-Type': 'application/json'
+  };
+  const response = UrlFetchApp.fetch(url, { method: 'get', headers });
+  const data = JSON.parse(response.getContentText());
+
+  for (const pipeline of data.results || []) {
+    for (const stage of pipeline.stages || []) {
+      map[stage.id] = stage.label;
+    }
+  }
+
+  return map;
+}
+
+function getDealToCompanyAssociationTypeMap() {
+  const url = 'https://api.hubapi.com/crm/v4/associations/deal/company/labels';
+  const headers = {
+    Authorization: `Bearer ${HUBSPOT_API_KEY}`,
+    'Content-Type': 'application/json'
+  };
+  const response = UrlFetchApp.fetch(url, { method: 'get', headers });
+  const data = JSON.parse(response.getContentText());
+
+  const map = {};
+  for (const assoc of data.results || []) {
+    map[assoc.id] = assoc.label;
+  }
+
+  return map;
+}
