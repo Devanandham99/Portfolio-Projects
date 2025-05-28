@@ -1,10 +1,10 @@
 import requests
 
 # Zoho Books API details
-access_token = '1000.7b9ea8b8b9afcb8b9ad56033999ec6e5.eea14448ec40bf2021e2afa30d45953f'  # Replace with your access token
+access_token = 'Token'  # Replace with your access token
 
 # Step 1: Get the Organization IDs
-url = "https://www.zohoapis.com/books/v3/organizations"
+url = "https://samplewebsite.com"
 headers = {
     "Authorization": f"Bearer {access_token}"
 }
