@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-df=pd.read_csv("C:/Users/DevanandamRSV/Python/SARIMA/Erith Sales.csv")
+df=pd.read_csv("C:/Users/DevanandamRSV/Python/Filelocation/filename.csv")
 print(df.head())
 df['Date']=pd.to_datetime(df['Date'])
 
