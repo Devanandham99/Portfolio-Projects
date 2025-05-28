@@ -1,11 +1,11 @@
 import requests
 
-url = "https://accounts.zoho.com/oauth/v2/token"
+url = "https://samplewebsite/oauth/v2/token"
 data = {
-    "code": "1000.8dc8f5174d6701f287d35139c9b2c339.ef0abc951204a78e4d281448115502c3",
-    "client_id": "1000.8ACPBFFBKGM9SL1N8J44VCDM8LD46R",
-    "client_secret": "b443ccfa9ee821eb93328e778438a4eb55efd23514",
-    "redirect_uri": "https://www.zoho.com/books",
+    "code": "APIKEY",
+    "client_id": "CLIENTID",
+    "client_secret": "SECRETID",
+    "redirect_uri": "https://www.abcd.com/",
     "grant_type": "authorization_code"
 }
 
