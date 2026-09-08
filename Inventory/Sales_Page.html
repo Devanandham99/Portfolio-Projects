@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Sales Catalogue</title>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+    <nav class="topnav">
+
+        <div class="nav-logo">
+            <img src="images/Logo.png" alt="Erith Global">
+        </div>
+
+        <div class="nav-links">
+            <a id="navSales" href="Sales_Page.html">Sales</a>
+        </div>
+
+        <div class="nav-user">
+
+            <span id="usernameLabel"></span>
+
+            <button class="btn btn-logout" onclick="logout()">
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </nav>
+
+    <h1>Sales Catalogue</h1>
+
+    <div class="field-card" style="margin-bottom:20px;">
+
+        <label>Search</label>
+
+        <input type="text" id="searchBox" placeholder="Search by Style or Material">
+
+    </div>
+
+    <div class="card">
+
+        <h3>Filters</h3>
+
+        <div class="details-grid">
+
+            <div class="field-card">
+                <label>Product Type</label>
+                <select id="filterProductType">
+                    <option value="">All Product Types</option>
+                </select>
+            </div>
+
+            <div class="field-card">
+                <label>Style</label>
+                <select id="filterStyle">
+                    <option value="">All Styles</option>
+                </select>
+            </div>
+
+            <div class="field-card">
+                <label>Total Thickness/Class</label>
+                <select id="filterThickness">
+                    <option value="">All Thicknesses</option>
+                </select>
+            </div>
+
+            <div class="button-row" style="margin-top:-4px;">
+
+                <button class="btn btn-primary" onclick="exportToExcel()">
+                    Export Excel
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <table class="inventory-table" id="salesTable">
+
+        <thead>
+
+            <tr>
+
+                <th>Style</th>
+                <th>Material Name</th>
+                <th>Description</th>
+                <th>Avl Length/Size</th>
+                <th>Avl Width</th>
+                <th>Avl Thickness/Class</th>
+                <th>Area</th>
+                <th>Product Type</th>
+                <th>Quantity</th>
+                <th>Landed Cost($)</th>
+                <th>Request Material</th>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+        </tbody>
+
+    </table>
+
+    <script src="auth.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+    <script type="module">
+
+        checkAccess(["sales"]);
+
+        import { createClient }
+            from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+        const supabase = createClient(
+            "https://sodcjwjjoatmdxevhlxu.supabase.co",
+            "sb_publishable_1t6bZNG-7DnAzblZ1HJHig_I5j9ycFh"
+        );
+
+        const SCHEMA = "inventory_system";
+
+        let allMaterials = [];
+
+        let filteredMaterials = [];
+
+        async function loadMaterials() {
+
+            const { data, error } = await supabase
+                .schema(SCHEMA)
+                .from("main_inv")
+                .select(`
+                    mat_id,
+                    description,
+                    r_length,
+                    r_width,
+                    r_thickness,
+                    area,
+                    available_quantity,
+                    landed_cost,
+
+                    style_table (
+                        style_name,
+                        material_name,
+                        prod_id,
+                        product_type (
+                            prod_type
+                        )
+                    )
+                `)
+                .order("mat_id");
+
+            if (error) {
+
+                alert(error.message);
+                return;
+
+            }
+
+            allMaterials = data;
+            filteredMaterials = data;
+
+            populateFilters();
+
+            renderTable(filteredMaterials);
+
+        }
+
+        function populateFilters() {
+
+            const productDropdown =
+                document.getElementById("filterProductType");
+
+            const styleDropdown =
+                document.getElementById("filterStyle");
+
+            const thicknessDropdown =
+                document.getElementById("filterThickness");
+
+            productDropdown.innerHTML =
+                `<option value="">All Product Types</option>`;
+
+            styleDropdown.innerHTML =
+                `<option value="">All Styles</option>`;
+
+            thicknessDropdown.innerHTML =
+                `<option value="">All Thicknesses</option>`;
+
+            const productTypes = [
+                ...new Set(
+                    allMaterials.map(x =>
+                        x.style_table?.product_type?.prod_type
+                    )
+                )
+            ]
+                .filter(Boolean)
+                .sort();
+
+            const styles = [
+                ...new Set(
+                    allMaterials.map(x =>
+                        x.style_table?.style_name
+                    )
+                )
+            ]
+                .filter(Boolean)
+                .sort();
+
+            const thicknesses = [
+                ...new Set(
+                    allMaterials.map(x =>
+                        x.r_thickness
+                    )
+                )
+            ]
+                .filter(x => x != null)
+                .sort((a, b) => a - b);
+
+            productTypes.forEach(value => {
+
+                productDropdown.innerHTML +=
+                    `<option value="${value}">${value}</option>`;
+
+            });
+
+            styles.forEach(value => {
+
+                styleDropdown.innerHTML +=
+                    `<option value="${value}">${value}</option>`;
+
+            });
+
+            thicknesses.forEach(value => {
+
+                thicknessDropdown.innerHTML +=
+                    `<option value="${value}">${value}</option>`;
+
+            });
+
+        }
+
+        function applyFilters() {
+
+            const search =
+                document.getElementById("searchBox")
+                    .value
+                    .toLowerCase()
+                    .trim();
+
+            const productType =
+                document.getElementById("filterProductType").value;
+
+            const style =
+                document.getElementById("filterStyle").value;
+
+            const thickness =
+                document.getElementById("filterThickness").value;
+
+            const filtered = allMaterials.filter(item => {
+
+                const itemProduct =
+                    item.style_table?.product_type?.prod_type ?? "";
+
+                const itemStyle =
+                    item.style_table?.style_name ?? "";
+
+                const itemMaterial =
+                    item.style_table?.material_name ?? "";
+
+                const itemDescription =
+                    item.description ?? "";
+
+                const matchesSearch =
+
+                    itemProduct.toLowerCase().includes(search) ||
+
+                    itemStyle.toLowerCase().includes(search) ||
+
+                    itemMaterial.toLowerCase().includes(search) ||
+
+                    itemDescription.toLowerCase().includes(search);
+
+                const matchesProduct =
+                    !productType ||
+                    itemProduct === productType;
+
+                const matchesStyle =
+                    !style ||
+                    itemStyle === style;
+
+                const matchesThickness =
+                    !thickness ||
+                    String(item.r_thickness) === thickness;
+
+                return (
+                    matchesSearch &&
+                    matchesProduct &&
+                    matchesStyle &&
+                    matchesThickness
+                );
+
+            });
+
+            filteredMaterials = filtered;
+
+            renderTable(filteredMaterials);
+
+        }
+
+        function renderTable(materials) {
+
+            const tbody =
+                document.querySelector("#salesTable tbody");
+
+            tbody.innerHTML = "";
+
+            materials.forEach(item => {
+
+                const tr = document.createElement("tr");
+
+                tr.innerHTML = `
+
+                    <td>
+
+                        ${item.style_table?.style_name ?? ""}
+
+                    </td>
+
+                    <td>
+
+                        ${item.style_table?.material_name ?? ""}
+
+                    </td>
+
+                    <td>
+
+                        ${item.description ?? ""}
+
+                    </td>
+
+                    <td>
+
+                        ${item.r_length ?? ""}
+
+                    </td>
+
+                    <td>
+
+                        ${item.r_width ?? ""}
+
+                    </td>
+
+                    <td>
+
+                        ${item.r_thickness ?? ""}
+
+                    </td>
+
+                    <td>
+
+                        ${item.area ?? ""}
+
+                    </td>
+
+                    <td>
+
+                        ${item.style_table?.product_type?.prod_type ?? ""}
+
+                    </td>
+
+                    <td>
+
+                        ${item.available_quantity ?? ""}
+
+                    </td>
+
+                    <td>
+
+                        ${item.landed_cost ?? ""}
+
+                    </td>
+
+                    <td>
+
+                        <button
+                            class="btn btn-primary"
+                            onclick="emailMaterial(${item.mat_id})">
+
+                            Request Material
+
+                        </button>
+
+                    </td>
+
+                `;
+
+                tbody.appendChild(tr);
+
+            });
+
+        }
+
+        window.emailMaterial = function (matId) {
+
+            const row = allMaterials.find(x => x.mat_id === matId);
+
+            if (!row) return;
+
+            const materialLink =
+                `${window.location.origin}${window.location.pathname.replace(
+                    "Sales_Page.html",
+                    "Material_Details.html"
+                )}?mat_id=${matId}`;
+
+            const subject =
+                `Pricing Request - ${row.style_table.style_name} - ${row.style_table.material_name}`;
+
+            const body =
+                `Hi,
+
+                Could you please obtain pricing for the following material?
+
+                Style:
+                ${row.style_table.style_name}
+
+                Material:
+                ${row.style_table.material_name}
+
+                Description:
+                ${row.description}
+
+                Required Quantity:
+
+
+                Material Details:
+                ${materialLink}
+
+                Thanks.`;
+
+            window.location.href =
+                `mailto:vinod.addanki@erithglobal.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+        };
+
+
+
+        document
+            .getElementById("searchBox")
+            .addEventListener("input", function () {
+
+                const search = this.value.toLowerCase().trim();
+
+                const filtered = allMaterials.filter(item => {
+
+                    const style =
+                        item.style_table?.style_name?.toLowerCase() ?? "";
+
+                    const material =
+                        item.style_table?.material_name?.toLowerCase() ?? "";
+
+                    const description =
+                        item.description?.toLowerCase() ?? "";
+
+                    const productType =
+                        item.style_table?.product_type?.prod_type?.toLowerCase() ?? "";
+
+                    return (
+                        style.includes(search) ||
+                        material.includes(search) ||
+                        description.includes(search) ||
+                        productType.includes(search)
+                    );
+
+                });
+
+                renderTable(filtered);
+
+            });
+
+        await loadMaterials();
+
+        document
+            .getElementById("filterProductType")
+            .addEventListener("change", applyFilters);
+
+        document
+            .getElementById("filterStyle")
+            .addEventListener("change", applyFilters);
+
+        document
+            .getElementById("filterThickness")
+            .addEventListener("change", applyFilters);
+
+        window.exportToExcel = function () {
+
+            const exportData = filteredMaterials.map(item => ({
+
+                "Material ID": item.mat_id,
+
+                "Style":
+                    item.style_table?.style_name ?? "",
+
+                "Material Name":
+                    item.style_table?.material_name ?? "",
+
+                "Product Type":
+                    item.style_table?.product_type?.prod_type ?? "",
+
+                "Description":
+                    item.description ?? "",
+
+                "Avl Length/Size":
+                    item.r_length,
+
+                "Avl Width":
+                    item.r_width,
+
+                "Avl Thickness/Class":
+                    item.r_thickness,
+
+                "Avl Thickness/Class":
+                    item.area,
+
+                "Quantity":
+                    item.available_quantity,
+
+                "Landed Cost":
+                    item.landed_cost
+
+            }));
+
+            const worksheet =
+                XLSX.utils.json_to_sheet(exportData);
+
+            const workbook =
+                XLSX.utils.book_new();
+
+            XLSX.utils.book_append_sheet(
+                workbook,
+                worksheet,
+                "Sales Catalogue"
+            );
+
+            XLSX.writeFile(
+                workbook,
+                "Sales_Catalogue.xlsx"
+            );
+
+        };
+
+        showLoggedInUser();
+    </script>
+
+</body>
+
+</html>

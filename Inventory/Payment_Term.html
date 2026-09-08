@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Inventory</title>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+    <nav class="topnav">
+
+        <div class="nav-logo">
+            <img src="images/Logo.png" alt="Erith Global">
+        </div>
+
+        <div class="nav-links">
+            <a id="navInventory" href="Main_Inv_Page.html">Inventory</a>
+            <a id="navSuppliers" href="Supplier_Page.html">Suppliers</a>
+            <a id="navStyles" href="Style_Page.html">Product Styles</a>
+            <a id="navPayments" href="Payment_Term.html">Payment Terms</a>
+            <a id="navOrders" href="Order_List.html">Orders</a>
+        </div>
+
+        <div class="nav-user">
+
+            <span id="usernameLabel"></span>
+
+            <button class="btn btn-logout" onclick="logout()">
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </nav>
+
+</body>
+
+<body>
+
+    <h1>Payment Terms Management</h1>
+
+    <div class="card">
+
+
+        <h3>Add New Payment Term</h3>
+
+        <div class="button-row">
+
+            <input type="text" id="newPaymentTerm" placeholder="Enter payment term">
+
+            <button class="btn btn-primary" onclick="addPaymentTerm()">
+                Add
+            </button>
+
+        </div>
+
+        <p id="message"></p>
+
+
+    </div>
+
+    <div class="card">
+
+
+        <h3>Existing Payment Terms</h3>
+
+        <table class="payment-table">
+
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Payment Term</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody id="paymentTableBody">
+            </tbody>
+
+        </table>
+
+
+    </div>
+    <script src="auth.js"></script>
+    <script type="module">
+
+        checkAccess(["inventory"]);
+
+        import { createClient }
+            from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+        const supabase = createClient(
+            'https://sodcjwjjoatmdxevhlxu.supabase.co',
+            'sb_publishable_1t6bZNG-7DnAzblZ1HJHig_I5j9ycFh'
+        );
+
+        const SCHEMA = 'inventory_system';
+        const TABLE = 'payment_terms_table';
+
+        async function loadPaymentTerms() {
+
+            const { data, error } = await supabase
+                .schema(SCHEMA)
+                .from(TABLE)
+                .select('*')
+                .order('pt_id');
+
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            const tbody =
+                document.getElementById('paymentTableBody');
+
+            tbody.innerHTML = '';
+
+            data.forEach(row => {
+
+                const tr = document.createElement('tr');
+
+                tr.innerHTML = `
+            <td>${row.pt_id}</td>
+
+            <td>
+                <input
+                    type="text"
+                    id="term-${row.pt_id}"
+                    value="${row.payment_label}">
+            </td>
+
+            <td>
+                <div class="button-row">
+
+                    <button
+                        class="btn btn-primary"
+                        onclick="updatePaymentTerm(${row.pt_id})">
+                        Save
+                    </button>
+
+                    <button
+                        class="btn btn-danger"
+                        onclick="deletePaymentTerm(${row.pt_id})">
+                        Delete
+                    </button>
+
+                </div>
+            </td>
+        `;
+
+                tbody.appendChild(tr);
+
+            });
+
+        }
+
+        window.addPaymentTerm = async function () {
+
+            const value =
+                document.getElementById('newPaymentTerm')
+                    .value
+                    .trim();
+
+            if (!value) {
+                alert('Please enter a payment term');
+                return;
+            }
+
+            const { error } = await supabase
+                .schema(SCHEMA)
+                .from(TABLE)
+                .insert({
+                    payment_label: value
+                });
+
+            if (error) {
+                console.error(error);
+                showMessage(error.message, true);
+                return;
+            }
+
+            document.getElementById('newPaymentTerm').value = '';
+
+            showMessage('Payment term added');
+
+            loadPaymentTerms();
+
+        }
+
+        window.updatePaymentTerm = async function (id) {
+
+            const value =
+                document.getElementById(`term-${id}`)
+                    .value
+                    .trim();
+
+            const { error } = await supabase
+                .schema(SCHEMA)
+                .from(TABLE)
+                .update({
+                    payment_label: value
+                })
+                .eq('pt_id', id);
+
+            if (error) {
+                console.error(error);
+                showMessage(error.message, true);
+                return;
+            }
+
+            showMessage('Payment term updated');
+
+            loadPaymentTerms();
+
+        }
+
+        window.deletePaymentTerm = async function (id) {
+
+            if (!confirm(
+                'Are you sure you want to delete this payment term?'
+            )) {
+                return;
+            }
+
+            const { error } = await supabase
+                .schema(SCHEMA)
+                .from(TABLE)
+                .delete()
+                .eq('pt_id', id);
+
+            if (error) {
+                console.error(error);
+                showMessage(error.message, true);
+                return;
+            }
+
+            showMessage('Payment term deleted');
+
+            loadPaymentTerms();
+
+        }
+
+        function showMessage(text, isError = false) {
+
+            const msg =
+                document.getElementById('message');
+
+            msg.textContent = text;
+
+            msg.className =
+                isError ? 'error' : 'success';
+
+            setTimeout(() => {
+                msg.textContent = '';
+            }, 3000);
+
+        }
+
+        loadPaymentTerms();
+
+        const page = window.location.pathname.split("/").pop();
+
+        const map = {
+            "Main_Inv_Page.html": "navInventory",
+            "Supplier_Page.html": "navSuppliers",
+            "Style_Page.html": "navStyles",
+            "Payment_Term.html": "navPayments",
+            "Order_List.html": "navOrders",
+            "Order_Page.html": "navOrders"
+        };
+
+        const activeId = map[page];
+
+        if (activeId) {
+            document.getElementById(activeId)?.classList.add("active");
+        }
+        showLoggedInUser();
+    </script>
+
+</body>
+
+</html>

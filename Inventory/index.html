@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Erith Global Inventory</title>
+
+    <link rel="stylesheet" href="login.css">
+
+</head>
+
+<body>
+
+    <div class="login-container">
+
+        <!-- Left Side -->
+        <div class="left-panel">
+
+            <div class="overlay">
+
+                <img src="images/Logo.png" class="logo" alt="Erith Global">
+
+                <div class="slide-content">
+
+                    <div class="carousel-image-wrapper">
+
+                        <img id="slideCurrent" src="images/1.jpg" class="slide-image carousel-image">
+
+                        <img id="slideNext" src="images/2.jpg" class="slide-image carousel-image">
+
+                    </div>
+                    <div class="slide-text">
+                        <h2 id="slideTitle">
+
+                            Inventory Management
+
+                        </h2>
+
+                        <p id="slideText">
+
+                            Track inventory, suppliers and production
+                            with one centralized platform.
+
+                        </p>
+                    </div>
+
+
+                </div>
+
+                <div class="slide-dots">
+
+                    <span class="dot active"></span>
+
+                    <span class="dot"></span>
+
+                    <span class="dot"></span>
+
+                    <span class="dot"></span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Right Side -->
+
+        <div class="right-panel">
+
+            <div class="login-box">
+
+                <h1>
+
+                    Welcome Back
+
+                </h1>
+
+                <p>
+
+                    Login to continue
+
+                </p>
+
+
+                <div class="input-group">
+
+                    <label>
+
+                        Username
+
+                    </label>
+
+                    <input id="username" type="text" placeholder="Enter username">
+
+                </div>
+
+
+                <div class="input-group">
+
+                    <label>
+
+                        Password
+
+                    </label>
+
+                    <input id="password" type="password" placeholder="Enter password">
+
+                </div>
+
+
+                <button class="login-btn" onclick="login()">
+
+                    Login
+
+                </button>
+
+
+                <div id="loginMessage">
+
+                </div>
+
+
+                <div class="footer">
+
+                    Erith Global Inventory System
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="auth.js"></script>
+
+    <script src="login.js"></script>
+
+</body>
+
+</html>

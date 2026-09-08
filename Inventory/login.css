@@ -1,0 +1,577 @@
+/* ===========================
+   GENERAL
+=========================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", sans-serif;
+}
+
+body {
+
+    background: #0f1115;
+    color: white;
+    height: 100vh;
+    overflow: hidden;
+
+}
+
+/* ===========================
+   LAYOUT
+=========================== */
+
+.login-container {
+
+    display: flex;
+    width: 100%;
+    height: 100vh;
+
+}
+
+/* ===========================
+   LEFT PANEL
+=========================== */
+
+.left-panel {
+
+    flex: 1.2;
+    position: relative;
+    overflow: hidden;
+
+    background: #111;
+
+}
+
+.left-panel::before {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    background: linear-gradient(rgba(0, 0, 0, .45),
+            rgba(0, 0, 0, .55));
+
+    z-index: 1;
+
+}
+
+.overlay {
+
+    position: relative;
+
+    width: 100%;
+    height: 100%;
+
+    z-index: 2;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    align-items: center;
+
+    padding: 60px;
+
+}
+
+.logo {
+
+    position: absolute;
+
+    top: 40px;
+
+    left: 40px;
+
+    width: 170px;
+
+}
+
+.slide-content {
+
+    width: 660px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    animation: fadeSlide .6s ease;
+
+}
+
+.slide-text {
+
+    width: 100%;
+
+    height: 130px;
+    /* Fixed space for text */
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: flex-start;
+
+    align-items: center;
+
+    text-align: center;
+
+    margin-top: 24px;
+
+}
+
+.carousel-image-wrapper {
+
+    position: relative;
+
+    width: 100%;
+
+    max-width: 660px;
+
+    height: 440px;
+
+    overflow: hidden;
+
+    border-radius: 24px;
+    box-shadow:
+        0 0 12px rgba(255, 255, 255, .25),
+        0 0 40px rgba(255, 255, 255, .10),
+        0 22px 55px rgba(0, 0, 0, .65);
+    margin-bottom: 16px;
+
+}
+
+.slide-image {
+
+    position: absolute;
+
+    inset: 0;
+
+    width: 100%;
+
+    height: 440px;
+
+    object-fit: cover;
+
+
+
+}
+
+#slideCurrent {
+
+    transform: translateX(0);
+
+    transition: transform .7s ease;
+
+    z-index: 2;
+
+}
+
+#slideNext {
+
+    transform: translateX(100%);
+
+    transition: transform .7s ease;
+
+    z-index: 1;
+
+}
+
+.slide-content h2 {
+
+    margin-top: 0px;
+
+    margin-bottom: 14px;
+
+    font-size: 34px;
+
+    color: #FFD54A;
+
+}
+
+.slide-content p {
+
+    margin: 0px;
+
+    max-width: 620px;
+
+    color: #d6d6d6;
+
+    line-height: 1.6;
+
+    font-size: 18px;
+
+}
+
+/* ===========================
+   DOTS
+=========================== */
+
+.slide-dots {
+
+    position: absolute;
+
+    bottom: 45px;
+
+    display: flex;
+
+    gap: 12px;
+
+}
+
+.dot {
+
+    width: 12px;
+
+    height: 12px;
+
+    border-radius: 50%;
+
+    background: #666;
+
+    transition: .3s;
+
+}
+
+.dot.active {
+
+    width: 34px;
+
+    border-radius: 30px;
+
+    background: #FFD54A;
+
+}
+
+/* ===========================
+   RIGHT PANEL
+=========================== */
+
+.right-panel {
+
+    flex: .8;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    position: relative;
+
+    background:
+        linear-gradient(160deg,
+            rgba(255, 255, 255, .10) 0%,
+            rgba(255, 213, 74, .05) 45%,
+            rgba(20, 20, 24, .55) 100%);
+
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+
+    border-left: 1px solid rgba(255, 255, 255, .12);
+
+    box-shadow:
+        inset 1px 0 rgba(255, 255, 255, .08),
+        -25px 0 50px rgba(0, 0, 0, .35);
+
+}
+
+.login-box {
+
+    width: 430px;
+
+    padding: 55px;
+
+    border-radius: 16px;
+
+    background: rgba(255, 255, 255, .01);
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+
+    box-shadow:
+        0 25px 60px rgba(0, 0, 0, .35),
+        inset 0 1px rgba(255, 255, 255, .08);
+
+}
+
+.login-box h1 {
+
+    font-size: 42px;
+
+    font-weight: 700;
+
+}
+
+.login-box p {
+
+    margin-top: 10px;
+
+    color: #aaa;
+
+    margin-bottom: 45px;
+
+}
+
+/* ===========================
+   INPUTS
+=========================== */
+
+.input-group {
+
+    margin-bottom: 28px;
+
+}
+
+.input-group label {
+
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #d4d4d4;
+
+    font-size: 14px;
+
+}
+
+.input-group input {
+
+    width: 100%;
+
+    padding: 17px 18px;
+
+    background: rgba(255, 255, 255, .06);
+
+    border: 1px solid rgba(255, 255, 255, .08);
+
+    color: white;
+
+    border-radius: 4px;
+
+    outline: none;
+
+    font-size: 16px;
+
+    transition: .25s;
+
+    backdrop-filter: blur(10px);
+
+}
+
+.input-group input:focus {
+
+    border-color: #FFD54A;
+
+    background: rgba(255, 255, 255, .10);
+
+    box-shadow: 0 0 18px rgba(255, 213, 74, .25);
+
+}
+
+/* ===========================
+   LOGIN BUTTON
+=========================== */
+
+.login-btn {
+
+    width: 100%;
+
+    padding: 17px;
+
+    border-radius: 4px;
+
+    border: 1px solid rgba(255, 255, 255, .18);
+
+    background: rgba(255, 213, 74, .22);
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+
+    color: #FFD54A;
+
+    font-size: 17px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background .35s ease,
+        border-color .35s ease,
+        box-shadow .35s ease,
+        transform .25s ease;
+
+    box-shadow:
+        0 8px 28px rgba(255, 213, 74, .18),
+        inset 0 1px 0 rgba(255, 255, 255, .18);
+
+    position: relative;
+    overflow: hidden;
+
+}
+
+.login-btn:hover {
+
+    background: rgba(255, 213, 74, .92);
+
+    color: #111;
+
+    border-color: rgba(255, 255, 255, .35);
+
+    box-shadow:
+        0 12px 38px rgba(255, 213, 74, .45),
+        0 0 20px rgba(255, 213, 74, .30);
+
+    transform: translateY(-2px);
+
+}
+
+.login-btn:active {
+
+    transform: translateY(0);
+
+}
+
+.login-btn::before {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    border-radius: inherit;
+
+    background: linear-gradient(135deg,
+            rgba(255, 255, 255, .22),
+            rgba(255, 255, 255, 0));
+
+    opacity: .6;
+
+    pointer-events: none;
+
+}
+
+/* ===========================
+   MESSAGE
+=========================== */
+
+#loginMessage {
+
+    text-align: center;
+
+    margin-top: 20px;
+
+    min-height: 25px;
+
+    color: #ff7070;
+
+    font-size: 15px;
+
+}
+
+/* ===========================
+   FOOTER
+=========================== */
+
+.footer {
+
+    margin-top: 55px;
+
+    text-align: center;
+
+    color: #666;
+
+    font-size: 14px;
+
+}
+
+/* ===========================
+   ANIMATION
+=========================== */
+
+@keyframes fadeSlide {
+
+    from {
+
+        opacity: 0;
+        transform: translateY(25px);
+
+    }
+
+    to {
+
+        opacity: 1;
+        transform: translateY(0);
+
+    }
+
+}
+
+/* ===========================
+   RESPONSIVE
+=========================== */
+
+@media(max-width:1100px) {
+
+    .left-panel {
+
+        display: none;
+
+    }
+
+    .right-panel {
+
+        flex: 1;
+
+    }
+
+}
+
+@media(max-width:520px) {
+
+    .login-box {
+
+        width: 90%;
+
+    }
+
+}
+
+
+#slideTitle {
+
+    height: 44px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin-bottom: 20px;
+
+}
+
+
+#slideTitle,
+#slideText {
+
+    margin-top: 0;
+    margin-bottom: 12px;
+
+    transition:
+        opacity .5s ease,
+        transform .5s ease;
+
+}

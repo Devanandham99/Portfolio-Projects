@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Material Details</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <nav class="topnav">
+
+    <div class="nav-logo">
+      <img src="images/Logo.png" alt="Erith Global">
+    </div>
+
+    <div class="nav-links">
+      <a id="navInventory" href="Main_Inv_Page.html">Inventory</a>
+      <a id="navSuppliers" href="Supplier_Page.html">Suppliers</a>
+      <a id="navStyles" href="Style_Page.html">Product Styles</a>
+      <a id="navPayments" href="Payment_Term.html">Payment Terms</a>
+      <a id="navOrders" href="Order_List.html">Orders</a>
+    </div>
+
+    <div class="nav-user">
+
+      <span id="usernameLabel"></span>
+
+      <button class="btn btn-logout" onclick="logout()">
+
+        Logout
+
+      </button>
+
+    </div>
+
+  </nav>
+
+  <h1>Material Details</h1>
+  <p id="message"></p>
+
+
+
+  <div class="details-grid">
+
+
+    <!-- Column 1 -->
+    <div class="details-column">
+
+      <div class="field-card">
+        <label>Material ID</label>
+        <input id="mat_id" readonly class="readonly">
+      </div>
+
+      <div class="field-card">
+        <label>Supplier</label>
+        <select id="supplier"></select>
+      </div>
+
+      <div class="field-card">
+        <label>Style</label>
+        <select id="style"></select>
+      </div>
+
+      <div class="field-card">
+        <label>Production Date</label>
+        <input type="date" id="production_date">
+      </div>
+
+      <div class="field-card">
+        <label>Total Quantity</label>
+        <input type="number" id="total_quantity">
+      </div>
+
+      <div class="field-card">
+        <label>Available Quantity</label>
+        <input type="number" id="available_quantity">
+      </div>
+
+      <div class="field-card">
+        <label>Description</label>
+        <textarea id="description" rows="6"></textarea>
+      </div>
+
+    </div>
+
+    <!-- Column 2 -->
+    <div class="details-column">
+
+      <div class="field-card">
+        <label>Total Length/Size(In)</label>
+        <input type="number" step="0.001" id="t_length">
+      </div>
+
+      <div class="field-card">
+        <label>Total Width(In)</label>
+        <input type="number" step="0.001" id="t_width">
+      </div>
+
+      <div class="field-card">
+        <label>Total Thickness/Class(mm)</label>
+        <input type="number" step="0.001" id="t_thickness">
+      </div>
+
+      <div class="field-card">
+        <label>Remaining Length/Size(In)</label>
+        <input type="number" step="0.001" id="r_length">
+      </div>
+
+      <div class="field-card">
+        <label>Remaining Width(In)</label>
+        <input type="number" step="0.001" id="r_width">
+      </div>
+
+      <div class="field-card">
+        <label>Remaining Thickness/Class(mm)</label>
+        <input type="number" step="0.001" id="r_thickness">
+      </div>
+
+      <div class="field-card">
+        <label>Area</label>
+        <input type="number" step="0.001" id="area">
+      </div>
+
+
+    </div>
+
+    <!-- Column 3 -->
+    <div class="details-column">
+
+      <div class="field-card timeline-card">
+
+        <div class="timeline-label">
+          <h3>Timeline</h3>
+        </div>
+
+        <div id="timeline-container">
+          <!-- Filled by JavaScript -->
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <h2>Costing Information</h2>
+
+  <h3>Input Costing</h3>
+
+  <div class="cost-grid">
+
+    <div class="cost-card">
+      <label>Material Cost</label>
+      <div class="currency-input">
+        <span>$</span>
+        <input type="number" step="0.01" id="mat_cost">
+      </div>
+    </div>
+
+    <div class="cost-card">
+      <label>Freight Cost</label>
+      <div class="currency-input">
+        <span>$</span>
+        <input type="number" step="0.01" id="freight_cost">
+      </div>
+    </div>
+
+    <div class="cost-card">
+      <label>Crate Cost</label>
+      <div class="currency-input">
+        <span>$</span>
+        <input type="number" step="0.01" id="crate_cost">
+      </div>
+    </div>
+
+    <div class="cost-card">
+      <label>Duty</label>
+      <div class="currency-input">
+        <span>$</span>
+        <input type="number" step="0.01" id="duty">
+      </div>
+    </div>
+
+    <div class="cost-card">
+      <label>VAT</label>
+      <div class="currency-input">
+        <span>$</span>
+        <input type="number" step="0.01" id="vat">
+      </div>
+    </div>
+
+  </div>
+
+  <h3>Calculations</h3>
+
+  <div class="cost-grid">
+
+    <div class="cost-card">
+      <label>Landed Cost</label>
+
+      <div class="currency-input">
+        <span>$</span>
+        <input type="number" step="0.01" id="landed_cost" readonly class="readonly">
+      </div>
+    </div>
+    <div class="cost-card">
+      <label>Total Sheet Cost</label>
+
+      <div class="currency-input">
+        <span>$</span>
+        <input type="number" step="0.01" id="tot_sheet_cost" readonly class="readonly">
+      </div>
+    </div>
+    <div class="cost-card">
+      <label>Total Landed Cost</label>
+
+      <div class="currency-input">
+        <span>$</span>
+        <input type="number" step="0.01" id="tot_landed_cost" readonly class="readonly">
+      </div>
+    </div>
+
+  </div>
+
+
+
+  <div class="button-row">
+    <button id="saveBtn" class="btn btn-primary"> Save Changes
+    </button>
+
+    <button class="btn btn-secondary" onclick="window.location.href='Main_Inv_Page.html'">
+      ← Back to Inventory
+    </button>
+    <button id="createOrderBtn" class="btn btn-secondary">
+      Create Order
+    </button>
+    <button id="duplicateBtn" class="btn btn-secondary">
+      Duplicate Material
+    </button>
+  </div>
+
+  <script src="auth.js"></script>
+
+  <script type="module">
+
+    checkAccess(["inventory"]);
+    import { createClient }
+      from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    const supabase = createClient(
+      'https://sodcjwjjoatmdxevhlxu.supabase.co',
+      'sb_publishable_1t6bZNG-7DnAzblZ1HJHig_I5j9ycFh'
+    );
+    const SCHEMA = 'inventory_system';
+    const matId = new URLSearchParams(window.location.search).get('mat_id');
+
+
+
+    async function loadDropdowns() {
+      const { data: sups } = await supabase.schema(SCHEMA).from('supplier').select('*').order('supplier_name');
+      const sSel = document.getElementById('supplier');
+      (sups || []).forEach(s => {
+        const o = document.createElement('option');
+        o.value = s.supp_id; o.textContent = s.supplier_name; sSel.appendChild(o);
+      });
+      const { data: styles } = await supabase.schema(SCHEMA).from('style_table').select('*').order('style_name');
+      const stSel = document.getElementById('style');
+      (styles || []).forEach(st => {
+        const o = document.createElement('option');
+        o.value = st.style_id; o.textContent = st.style_name; stSel.appendChild(o);
+      });
+    }
+
+
+
+    async function loadMaterial() {
+
+      const { data, error } = await supabase
+        .schema(SCHEMA)
+        .from('main_inv')
+        .select('*')
+        .eq('mat_id', matId)
+        .single();
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      for (const id of [
+        'mat_id',
+        'production_date',
+        'description',
+        'total_quantity',
+        'available_quantity',
+        'mat_cost',
+        'freight_cost',
+        'crate_cost',
+        'duty',
+        'vat',
+        'landed_cost',
+        'tot_sheet_cost',
+        'tot_landed_cost',
+        't_length',
+        't_width',
+        't_thickness',
+        'r_length',
+        'r_width',
+        'r_thickness',
+        'area'
+      ]) {
+        document.getElementById(id).value = data[id] ?? '';
+      }
+
+      document.getElementById('supplier').value = data.supplier_id;
+      document.getElementById('style').value = data.style_id;
+
+      document.getElementById("createOrderBtn").onclick = () => {
+        window.location.href =
+          `Order_Page.html?mat_id=${matId}`;
+      };
+
+      const timelineContainer = document.getElementById("timeline-container");
+      timelineContainer.innerHTML = "";
+
+      const timeline = data.timeline_array ?? [];
+
+      timeline.forEach(entry => {
+
+        let displayText = "";
+
+        // If entry is a JSON string, convert it to an object
+        if (typeof entry === "string") {
+          try {
+            entry = JSON.parse(entry);
+          } catch {
+            // Leave it as a normal string
+          }
+        }
+
+        if (typeof entry === "object" && entry !== null) {
+
+          if (entry.type === "order") {
+
+            displayText = `
+                Order placed (${entry.quantity} pcs) -
+                <a href="Order_Page.html?order_id=${entry.order_id}">
+                    Order #${entry.order_id}
+                </a>
+            `;
+
+          } else {
+
+            displayText = entry.text || "";
+
+          }
+
+        } else {
+
+          displayText = entry;
+
+          let match = String(entry).match(/^Duplicated from Material ID:(\d+)$/);
+
+          if (match) {
+            displayText = `
+                Duplicated from
+                <a href="Material_Details.html?mat_id=${match[1]}">
+                    Material #${match[1]}
+                </a>
+            `;
+          }
+
+          match = String(entry).match(/^Duplicated to Material ID:(\d+)$/);
+
+          if (match) {
+            displayText = `
+                Duplicated to
+                <a href="Material_Details.html?mat_id=${match[1]}">
+                    Material #${match[1]}
+                </a>
+            `;
+          }
+        }
+
+        timelineContainer.innerHTML += `
+        <div class="timeline-item">
+            <div class="timeline-text">
+                ${displayText}
+            </div>
+            <div class="timeline-divider">
+                <span class="timeline-dot"></span>
+            </div>
+        </div>
+    `;
+      });
+
+      // Recalculate all derived values after loading
+      calculateFields();
+    }
+
+    function calculateFields() {
+
+      const mat =
+        Number(document.getElementById("mat_cost").value) || 0;
+
+      const freight =
+        Number(document.getElementById("freight_cost").value) || 0;
+
+      const crate =
+        Number(document.getElementById("crate_cost").value) || 0;
+
+      const duty =
+        Number(document.getElementById("duty").value) || 0;
+
+      const vat =
+        Number(document.getElementById("vat").value) || 0;
+
+      const available =
+        Number(document.getElementById("available_quantity").value) || 0;
+
+      const landed =
+        mat + freight + crate + duty + vat;
+
+      const tot_sheet =
+        available * mat;
+
+      const tot_landed =
+        landed * available;
+
+      document.getElementById("landed_cost").value =
+        landed.toFixed(2);
+
+      document.getElementById("tot_sheet_cost").value =
+        tot_sheet.toFixed(2);
+
+      document.getElementById("tot_landed_cost").value =
+        tot_landed.toFixed(2);
+    }
+
+    document.getElementById("duplicateBtn").onclick = async () => {
+
+      // Fetch the current material
+      const { data: original, error: fetchError } = await supabase
+        .schema(SCHEMA)
+        .from("main_inv")
+        .select("*")
+        .eq("mat_id", matId)
+        .single();
+
+      if (fetchError) {
+        alert(fetchError.message);
+        return;
+      }
+
+      // Create a copy WITHOUT the primary key
+      const { mat_id, ...newMaterial } = original;
+
+      // Reset the timeline for the duplicated material
+      newMaterial.timeline_array = [
+        `Duplicated from Material ID:${matId}`
+      ];
+
+      // Insert the duplicate
+      const { data: inserted, error: insertError } = await supabase
+        .schema(SCHEMA)
+        .from("main_inv")
+        .insert(newMaterial)
+        .select()
+        .single();
+
+      if (insertError) {
+        alert(insertError.message);
+        return;
+      }
+
+      alert(
+        `Material duplicated successfully!\n\n` +
+        `Original Material ID: ${matId}\n` +
+        `New Material ID: ${inserted.mat_id}`
+      );
+
+      // Optional: Open the newly created material automatically
+      // window.location.href =
+      //     `Material_Details.html?mat_id=${inserted.mat_id}`;
+
+    };
+
+
+    document.getElementById('saveBtn').onclick = async () => {
+      calculateFields();
+      const payload = {
+        supplier_id: Number(document.getElementById('supplier').value),
+        style_id: Number(document.getElementById('style').value),
+        production_date: document.getElementById('production_date').value || null,
+        description: document.getElementById('description').value,
+        total_quantity: Number(document.getElementById('total_quantity').value),
+        available_quantity: Number(document.getElementById('available_quantity').value),
+        mat_cost: Number(document.getElementById('mat_cost').value),
+        freight_cost: Number(document.getElementById('freight_cost').value),
+        crate_cost: Number(document.getElementById('crate_cost').value),
+        duty: Number(document.getElementById('duty').value),
+        vat: Number(document.getElementById('vat').value),
+        landed_cost: Number(document.getElementById('landed_cost').value),
+        tot_sheet_cost: Number(document.getElementById('tot_sheet_cost').value),
+        tot_landed_cost: Number(document.getElementById('tot_landed_cost').value),
+        t_length: Number(document.getElementById('t_length').value),
+        t_width: Number(document.getElementById('t_width').value),
+        t_thickness: Number(document.getElementById('t_thickness').value),
+        r_length: Number(document.getElementById('r_length').value),
+        r_width: Number(document.getElementById('r_width').value),
+        r_thickness: Number(document.getElementById('r_thickness').value),
+        area: Number(document.getElementById('area').value)
+
+      };
+      const { error } = await supabase.schema(SCHEMA).from('main_inv').update(payload).eq('mat_id', matId);
+      if (error) { alert(error.message); } else { alert('Saved successfully'); }
+    };
+
+    await loadDropdowns();
+    await loadMaterial();
+    const page = window.location.pathname.split("/").pop();
+
+    const map = {
+      "Main_Inv_Page.html": "navInventory",
+      "Supplier_Page.html": "navSuppliers",
+      "Style_Page.html": "navStyles",
+      "Payment_Term.html": "navPayments",
+      "Order_List.html": "navOrders",
+      "Order_Page.html": "navOrders"
+    };
+
+    const activeId = map[page];
+
+    if (activeId) {
+      document.getElementById(activeId)?.classList.add("active");
+    }
+
+    showLoggedInUser();
+  </script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Inventory</title>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+    <nav class="topnav">
+
+        <div class="nav-logo">
+            <img src="images/Logo.png" alt="Erith Global">
+        </div>
+
+        <div class="nav-links">
+            <a id="navInventory" href="Main_Inv_Page.html">Inventory</a>
+            <a id="navSuppliers" href="Supplier_Page.html">Suppliers</a>
+            <a id="navStyles" href="Style_Page.html">Product Styles</a>
+            <a id="navPayments" href="Payment_Term.html">Payment Terms</a>
+            <a id="navOrders" href="Order_List.html">Orders</a>
+        </div>
+
+        <div class="nav-user">
+
+            <span id="usernameLabel"></span>
+
+            <button class="btn btn-logout" onclick="logout()">
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </nav>
+
+</body>
+
+<body>
+
+    <h1>Supplier Management</h1>
+
+    <div class="card">
+
+        <h3>Add Supplier</h3>
+
+        <table class="inventory-table">
+
+            <tr>
+
+                <td>
+                    <input type="text" id="newSupplierName" placeholder="Supplier Name">
+                    
+                </td>
+
+                <td>
+                    <input type="text" id="newSupplierLocation" placeholder="Supplier Location">
+                </td>
+
+                <td>
+                    <select id="newPaymentTerm">
+                    </select>
+                </td>
+
+                <td>
+                    <button class="btn btn-primary" onclick="addSupplier()">
+                        Add Supplier
+                    </button>
+                </td>
+
+            </tr>
+
+        </table>
+
+
+    </div>
+
+    <p id="message"></p>
+
+    <div class="card">
+
+
+        <h3>Existing Suppliers</h3>
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>ID</th>
+                    <th>Supplier Name</th>
+                    <th>Location</th>
+                    <th>Payment Term</th>
+                    <th>Actions</th>
+                </tr>
+
+            </thead>
+
+            <tbody id="supplierTableBody">
+            </tbody>
+
+        </table>
+
+
+    </div>
+    <script src="auth.js"></script>
+
+    <script type="module">
+
+        checkAccess(["inventory"]);
+
+        import { createClient }
+            from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+        const supabase = createClient(
+            'https://sodcjwjjoatmdxevhlxu.supabase.co',
+            'sb_publishable_1t6bZNG-7DnAzblZ1HJHig_I5j9ycFh'
+        );
+
+        const SCHEMA = 'inventory_system';
+
+        let paymentTerms = [];
+
+        async function loadPaymentTerms() {
+
+            const { data, error } = await supabase
+                .schema(SCHEMA)
+                .from('payment_terms_table')
+                .select('*')
+                .order('pt_id');
+
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            paymentTerms = data;
+
+            const dropdown =
+                document.getElementById('newPaymentTerm');
+
+            dropdown.innerHTML = '';
+
+            data.forEach(term => {
+
+                const option =
+                    document.createElement('option');
+
+                option.value = term.pt_id;
+                option.textContent =
+                    term.payment_label;
+
+                dropdown.appendChild(option);
+
+            });
+
+        }
+
+        function buildPaymentDropdown(
+            supplierId,
+            selectedPtId
+        ) {
+
+            let html =
+                `<select id="pt-${supplierId}">`;
+
+            paymentTerms.forEach(term => {
+
+                const selected =
+                    term.pt_id === selectedPtId
+                        ? 'selected'
+                        : '';
+
+                html += `
+            <option
+                value="${term.pt_id}"
+                ${selected}>
+                ${term.payment_label}
+            </option>`;
+            });
+
+            html += `</select>`;
+
+            return html;
+        }
+
+        async function loadSuppliers() {
+
+            const { data, error } = await supabase
+                .schema(SCHEMA)
+                .from('supplier')
+                .select('*')
+                .order('supp_id');
+
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            const tbody =
+                document.getElementById(
+                    'supplierTableBody'
+                );
+
+            tbody.innerHTML = '';
+
+            data.forEach(row => {
+
+                const tr =
+                    document.createElement('tr');
+
+                tr.innerHTML = `
+
+            <td>${row.supp_id}</td>
+
+            <td>
+                <input
+                    type="text"
+                    id="name-${row.supp_id}"
+                    value="${row.supplier_name || ''}">
+            </td>
+
+            <td>
+                <input
+                    type="text"
+                    id="loc-${row.supp_id}"
+                    value="${row.supplier_loc || ''}">
+            </td>
+
+            <td>
+                ${buildPaymentDropdown(
+                    row.supp_id,
+                    row.pt_id
+                )}
+            </td>
+
+            <td>
+
+                <div class="action-buttons">
+
+                    <button
+                        class="btn btn-primary"
+                        onclick="updateSupplier(${row.supp_id})">
+                        Save
+                    </button>
+
+                    <button
+                        class="btn btn-danger"
+                        onclick="deleteSupplier(${row.supp_id})">
+                        Delete
+                    </button>
+
+                </div>
+
+            </td>
+
+        `;
+
+                tbody.appendChild(tr);
+
+            });
+
+        }
+
+        window.addSupplier =
+            async function () {
+
+                const supplierName =
+                    document.getElementById(
+                        'newSupplierName'
+                    ).value.trim();
+
+                const supplierLocation =
+                    document.getElementById(
+                        'newSupplierLocation'
+                    ).value.trim();
+
+                const ptId =
+                    document.getElementById(
+                        'newPaymentTerm'
+                    ).value;
+
+                if (!supplierName) {
+
+                    showMessage(
+                        'Supplier name is required',
+                        true
+                    );
+
+                    return;
+                }
+
+                const { error } = await supabase
+                    .schema(SCHEMA)
+                    .from('supplier')
+                    .insert({
+                        supplier_name: supplierName,
+                        supplier_loc: supplierLocation,
+                        pt_id: Number(ptId)
+                    });
+
+                if (error) {
+
+                    console.error(error);
+
+                    showMessage(
+                        error.message,
+                        true
+                    );
+
+                    return;
+                }
+
+                document.getElementById(
+                    'newSupplierName'
+                ).value = '';
+
+                document.getElementById(
+                    'newSupplierLocation'
+                ).value = '';
+
+                showMessage(
+                    'Supplier added successfully'
+                );
+
+                loadSuppliers();
+
+            }
+
+        window.updateSupplier =
+            async function (id) {
+
+                const supplierName =
+                    document.getElementById(
+                        `name-${id}`
+                    ).value.trim();
+
+                const supplierLocation =
+                    document.getElementById(
+                        `loc-${id}`
+                    ).value.trim();
+
+                const ptId =
+                    document.getElementById(
+                        `pt-${id}`
+                    ).value;
+
+                const { error } = await supabase
+                    .schema(SCHEMA)
+                    .from('supplier')
+                    .update({
+                        supplier_name: supplierName,
+                        supplier_loc: supplierLocation,
+                        pt_id: Number(ptId)
+                    })
+                    .eq('supp_id', id);
+
+                if (error) {
+
+                    console.error(error);
+
+                    showMessage(
+                        error.message,
+                        true
+                    );
+
+                    return;
+                }
+
+                showMessage(
+                    'Supplier updated successfully'
+                );
+
+            }
+
+        window.deleteSupplier =
+            async function (id) {
+
+                if (
+                    !confirm(
+                        'Delete this supplier?'
+                    )
+                ) {
+                    return;
+                }
+
+                const { error } = await supabase
+                    .schema(SCHEMA)
+                    .from('supplier')
+                    .delete()
+                    .eq('supp_id', id);
+
+                if (error) {
+
+                    console.error(error);
+
+                    showMessage(
+                        error.message,
+                        true
+                    );
+
+                    return;
+                }
+
+                showMessage(
+                    'Supplier deleted successfully'
+                );
+
+                loadSuppliers();
+
+            }
+
+        function showMessage(
+            text,
+            isError = false
+        ) {
+
+            const msg =
+                document.getElementById(
+                    'message'
+                );
+
+            msg.textContent = text;
+
+            msg.className =
+                isError
+                    ? 'error'
+                    : 'success';
+
+            setTimeout(() => {
+
+                msg.textContent = '';
+
+            }, 3000);
+
+        }
+
+        await loadPaymentTerms();
+        await loadSuppliers();
+
+        const page = window.location.pathname.split("/").pop();
+
+        const map = {
+            "Main_Inv_Page.html": "navInventory",
+            "Supplier_Page.html": "navSuppliers",
+            "Style_Page.html": "navStyles",
+            "Payment_Term.html": "navPayments",
+            "Order_List.html": "navOrders",
+            "Order_Page.html": "navOrders"
+        };
+
+        const activeId = map[page];
+
+        if (activeId) {
+            document.getElementById(activeId)?.classList.add("active");
+        }
+
+        showLoggedInUser();
+    </script>
+
+</body>
+
+</html>

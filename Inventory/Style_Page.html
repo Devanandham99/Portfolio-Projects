@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Inventory</title>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+    <nav class="topnav">
+
+        <div class="nav-logo">
+            <img src="images/Logo.png" alt="Erith Global">
+        </div>
+
+        <div class="nav-links">
+            <a id="navInventory" href="Main_Inv_Page.html">Inventory</a>
+            <a id="navSuppliers" href="Supplier_Page.html">Suppliers</a>
+            <a id="navStyles" href="Style_Page.html">Product Styles</a>
+            <a id="navPayments" href="Payment_Term.html">Payment Terms</a>
+            <a id="navOrders" href="Order_List.html">Orders</a>
+        </div>
+
+        <div class="nav-user">
+
+            <span id="usernameLabel"></span>
+
+            <button class="btn btn-logout" onclick="logout()">
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </nav>
+
+
+
+    <h1>Style Management</h1>
+
+    <div class="card">
+
+
+        <h3>Add New Style</h3>
+
+        <table>
+            <tr>
+
+                <td>
+                    <input type="text" id="newStyleName" placeholder="Style Name">
+                </td>
+
+                <td>
+                    <input type="text" id="newMaterialName" placeholder="Material Name">
+                </td>
+                <td>
+                    <select id="newProdType"></select>
+                </td>
+
+                <td>
+                    <button class="btn btn-primary" onclick="addStyle()">
+                        Add Style
+                    </button>
+                </td>
+
+            </tr>
+        </table>
+
+
+    </div>
+
+    <p id="message"></p>
+
+    <div class="card">
+
+
+        <h3>Existing Styles</h3>
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Style ID</th>
+                    <th>Style Name</th>
+                    <th>Material Name</th>
+                    <th>Product Type</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody id="styleTableBody">
+            </tbody>
+
+        </table>
+
+
+    </div>
+    <script src="auth.js"></script>
+
+    <script type="module">
+
+        checkAccess(["inventory"]);
+
+        import { createClient }
+            from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+        const supabase = createClient(
+            'https://sodcjwjjoatmdxevhlxu.supabase.co',
+            'sb_publishable_1t6bZNG-7DnAzblZ1HJHig_I5j9ycFh'
+        );
+
+        const SCHEMA = 'inventory_system';
+
+        let productTypes = [];
+
+        async function loadProductTypes() {
+
+            const { data, error } = await supabase
+                .schema(SCHEMA)
+                .from("product_type")
+                .select("*")
+                .order("prod_type");
+
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            productTypes = data || [];
+
+            const dropdown =
+                document.getElementById("newProdType");
+
+            if (dropdown) {
+
+                dropdown.innerHTML = "";
+
+                productTypes.forEach(p => {
+
+                    dropdown.innerHTML += `
+                <option value="${p.prod_id}">
+                    ${p.prod_type}
+                </option>
+            `;
+
+                });
+            }
+        }
+
+        function productTypeDropdown(id, selected) {
+
+            let html =
+                `<select id="prod-${id}">`;
+
+            productTypes.forEach(p => {
+
+                html += `
+            <option
+                value="${p.prod_id}"
+                ${p.prod_id == selected ? "selected" : ""}>
+                ${p.prod_type}
+            </option>
+        `;
+
+            });
+
+            html += `</select>`;
+
+            return html;
+        }
+
+
+        async function loadStyles() {
+
+            const { data, error } = await supabase
+                .schema(SCHEMA)
+                .from('style_table')
+                .select(`
+                    *,
+                    product_type (
+                        prod_type
+                    )
+                `)
+                .order('style_id');
+
+            if (error) {
+                console.error(error);
+                showMessage(error.message, true);
+                return;
+            }
+
+            const tbody =
+                document.getElementById(
+                    'styleTableBody'
+                );
+
+            tbody.innerHTML = '';
+
+            data.forEach(row => {
+
+                const tr =
+                    document.createElement('tr');
+
+                tr.innerHTML = `
+
+            <td>
+                ${row.style_id}
+            </td>
+
+            <td>
+                <input
+                    type="text"
+                    id="style-${row.style_id}"
+                    value="${row.style_name || ''}">
+            </td>
+
+            <td>
+                <input
+                    type="text"
+                    id="material-${row.style_id}"
+                    value="${row.material_name || ''}">
+            </td>
+
+            <td>
+                ${productTypeDropdown(
+                    row.style_id,
+                    row.prod_id
+                )}
+            </td>
+
+            <td>
+
+                <div class="action-buttons">
+
+                    <button
+                        class="btn btn-primary"
+                        onclick="updateStyle(${row.style_id})">
+                        Save
+                    </button>
+
+                    <button
+                        class="btn btn-danger"
+                        onclick="deleteStyle(${row.style_id})">
+                        Delete
+                    </button>
+
+                </div>
+
+            </td>
+
+        `;
+
+                tbody.appendChild(tr);
+
+            });
+
+        }
+
+        window.addStyle =
+            async function () {
+
+                const styleName =
+                    document.getElementById(
+                        'newStyleName'
+                    ).value.trim();
+
+                const materialName =
+                    document.getElementById(
+                        'newMaterialName'
+                    ).value.trim();
+
+                const prodId =
+                    Number(
+                        document.getElementById(
+                            "newProdType"
+                        ).value
+                    );
+
+                if (!styleName) {
+
+                    showMessage(
+                        'Style name is required',
+                        true
+                    );
+
+                    return;
+                }
+
+                const { error } = await supabase
+                    .schema(SCHEMA)
+                    .from('style_table')
+                    .insert({
+                        style_name: styleName,
+                        material_name: materialName,
+                        prod_id: prodId
+                    });
+
+                if (error) {
+
+                    console.error(error);
+
+                    showMessage(
+                        error.message,
+                        true
+                    );
+
+                    return;
+                }
+
+                document.getElementById(
+                    'newStyleName'
+                ).value = '';
+
+                document.getElementById(
+                    'newMaterialName'
+                ).value = '';
+
+                showMessage(
+                    'Style added successfully'
+                );
+
+
+                await loadProductTypes();
+                await loadStyles();
+
+            }
+
+        window.updateStyle =
+            async function (id) {
+
+                const styleName =
+                    document.getElementById(
+                        `style-${id}`
+                    ).value.trim();
+
+                const materialName =
+                    document.getElementById(
+                        `material-${id}`
+                    ).value.trim();
+
+                const { error } = await supabase
+                    .schema(SCHEMA)
+                    .from('style_table')
+                    .update({
+                        style_name: styleName,
+                        material_name: materialName,
+
+                        prod_id: Number(
+                            document.getElementById(
+                                `prod-${id}`
+                            ).value
+                        )
+                    })
+                    .eq('style_id', id);
+
+                if (error) {
+
+                    console.error(error);
+
+                    showMessage(
+                        error.message,
+                        true
+                    );
+
+                    return;
+                }
+
+                showMessage(
+                    'Style updated successfully'
+                );
+
+            }
+
+        window.deleteStyle =
+            async function (id) {
+
+                if (
+                    !confirm(
+                        'Delete this style?'
+                    )
+                ) {
+                    return;
+                }
+
+                const { error } = await supabase
+                    .schema(SCHEMA)
+                    .from('style_table')
+                    .delete()
+                    .eq('style_id', id);
+
+                if (error) {
+
+                    console.error(error);
+
+                    showMessage(
+                        error.message,
+                        true
+                    );
+
+                    return;
+                }
+
+                showMessage(
+                    'Style deleted successfully'
+                );
+
+
+                await loadProductTypes();
+                await loadStyles();
+
+            }
+
+        function showMessage(
+            text,
+            isError = false
+        ) {
+
+            const msg =
+                document.getElementById(
+                    'message'
+                );
+
+            msg.textContent = text;
+
+            msg.className =
+                isError
+                    ? 'error'
+                    : 'success';
+
+            setTimeout(() => {
+
+                msg.textContent = '';
+
+            }, 3000);
+
+        }
+
+        const page = window.location.pathname.split("/").pop();
+
+        await loadProductTypes();
+        await loadStyles();
+        const map = {
+            "Main_Inv_Page.html": "navInventory",
+            "Supplier_Page.html": "navSuppliers",
+            "Style_Page.html": "navStyles",
+            "Payment_Term.html": "navPayments",
+            "Order_List.html": "navOrders",
+            "Order_Page.html": "navOrders"
+        };
+
+        const activeId = map[page];
+
+        if (activeId) {
+            document.getElementById(activeId)?.classList.add("active");
+        }
+
+        showLoggedInUser();
+    </script>
+
+</body>
+
+</html>

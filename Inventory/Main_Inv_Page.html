@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Inventory</title>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+    <nav class="topnav">
+
+        <div class="nav-logo">
+            <img src="images/Logo.png" alt="Erith Global">
+        </div>
+
+        <div class="nav-links">
+            <a id="navInventory" href="Main_Inv_Page.html">Inventory</a>
+            <a id="navSuppliers" href="Supplier_Page.html">Suppliers</a>
+            <a id="navStyles" href="Style_Page.html">Product Styles</a>
+            <a id="navPayments" href="Payment_Term.html">Payment Terms</a>
+            <a id="navOrders" href="Order_List.html">Orders</a>
+        </div>
+
+        <div class="nav-user">
+
+            <span id="usernameLabel"></span>
+
+            <button class="btn btn-logout" onclick="logout()">
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </nav>
+
+    <div>
+
+        <h1>Inventory Management</h1>
+
+        <p id="message"></p>
+
+        <div class="card">
+
+            <h3>Add New Material</h3>
+
+            <div class="details-grid">
+
+                <div class="field-card">
+                    <label>Style</label>
+                    <select id="new_style"></select>
+                </div>
+
+                <div class="field-card">
+                    <label>Supplier</label>
+                    <select id="new_supplier"></select>
+                </div>
+
+                <div class="field-card">
+                    <label>Avl Qty</label>
+                    <input type="number" id="new_available_quantity" min="0" step="1">
+                </div>
+
+            </div>
+
+            <div class="button-row">
+                <button class="btn btn-primary" onclick="addInventory()">
+                    Add Material
+                </button>
+            </div>
+
+        </div>
+
+        <div class="card">
+
+            <label>Search Materials</label>
+
+            <input id="searchBox" type="text" placeholder="Search by Material ID, Style, Material or Supplier">
+
+        </div>
+
+        <div class="dark-card">
+
+            <h3>Existing Materials</h3>
+
+            <div class="pagination">
+
+                <button class="btn btn-secondary" id="prevPageTop">
+                    ◀ Previous
+                </button>
+
+                <span id="pageInfoTop"></span>
+
+                <button class="btn btn-secondary" id="nextPageTop">
+                    Next ▶
+                </button>
+
+            </div>
+
+            <div id="inventoryTableBody" class="inventory-grid">
+                <!-- Populated dynamically by loadInventory() -->
+            </div>
+
+            <div class="pagination">
+
+                <button class="btn btn-secondary" id="prevPage">
+                    ◀ Previous
+                </button>
+
+                <span id="pageInfo"></span>
+
+                <button class="btn btn-secondary" id="nextPage">
+                    Next ▶
+                </button>
+
+            </div>
+
+        </div>
+
+        <script src="auth.js"></script>
+
+        <script type="module">
+
+            checkAccess(["inventory"]);
+
+            import { createClient }
+                from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+            const supabase = createClient(
+                'https://sodcjwjjoatmdxevhlxu.supabase.co',
+                'sb_publishable_1t6bZNG-7DnAzblZ1HJHig_I5j9ycFh'
+            );
+
+            const SCHEMA = 'inventory_system';
+
+            let suppliers = [];
+            let styles = [];
+
+            let inventoryData = [];
+            let originalInventory = [];
+
+            let currentPage = 1;
+
+            const rowsPerPage = 25;
+
+            function showMessage(text, isError = false) {
+
+                const msg =
+                    document.getElementById('message');
+
+                msg.textContent = text;
+                msg.className =
+                    isError ? 'error' : 'success';
+
+                setTimeout(() => {
+                    msg.textContent = '';
+                }, 3000);
+            }
+
+            async function loadSuppliers() {
+
+                const { data } = await supabase
+                    .schema(SCHEMA)
+                    .from('supplier')
+                    .select('*')
+                    .order('supplier_name');
+
+                suppliers = data || [];
+
+                const dropdown =
+                    document.getElementById('new_supplier');
+
+                dropdown.innerHTML = '';
+
+                suppliers.forEach(s => {
+
+                    dropdown.innerHTML += `
+        <option value="${s.supp_id}">
+            ${s.supplier_name}
+        </option>`;
+                });
+            }
+
+            async function loadStyles() {
+
+                const { data } = await supabase
+                    .schema(SCHEMA)
+                    .from('style_table')
+                    .select('*')
+                    .order('style_name');
+
+                styles = data || [];
+
+                const dropdown =
+                    document.getElementById('new_style');
+
+                dropdown.innerHTML = '';
+
+                styles.forEach(s => {
+
+                    dropdown.innerHTML += `
+        <option value="${s.style_id}">
+            ${s.style_name}
+        </option>`;
+                });
+            }
+
+            function supplierDropdown(id, selected) {
+
+                let html =
+                    `<select
+                        class="dark-inventory-select"
+                        id="supplier-${id}">`;
+
+                suppliers.forEach(s => {
+
+                    html += `
+        <option
+        value="${s.supp_id}"
+        ${s.supp_id == selected ? 'selected' : ''}>
+        ${s.supplier_name}
+        </option>`;
+                });
+
+                html += `</select>`;
+
+                return html;
+            }
+
+            function styleDropdown(id, selected) {
+
+                let html =
+                    `<select 
+                        class="dark-inventory-select"
+                        id="style-${id}">`;
+
+                styles.forEach(s => {
+
+                    html += `
+        <option
+        value="${s.style_id}"
+        ${s.style_id == selected ? 'selected' : ''}>
+        ${s.style_name}
+        </option>`;
+                });
+
+                html += `</select>`;
+
+                return html;
+            }
+
+            async function loadInventory() {
+
+                const { data, error } = await supabase
+                    .schema(SCHEMA)
+                    .from("main_inv")
+                    .select(`
+                        *,
+                        supplier (
+                            supplier_name
+                        ),
+                        style_table (
+                            style_name,
+                            material_name
+                        )
+                    `)
+                    .order("mat_id");
+
+                if (error) {
+
+                    console.error(error);
+
+                    showMessage(error.message, true);
+
+                    return;
+
+                }
+
+                originalInventory = data || [];
+
+                inventoryData = [...originalInventory];
+
+                currentPage = 1;
+
+                renderInventory();
+
+            }
+
+            function renderInventory() {
+
+                const container =
+                    document.getElementById("inventoryTableBody");
+
+                container.innerHTML = "";
+
+                const start =
+                    (currentPage - 1) * rowsPerPage;
+
+                const end =
+                    start + rowsPerPage;
+
+                const pageRows =
+                    inventoryData.slice(start, end);
+
+                pageRows.forEach(row => {
+
+                    container.innerHTML += `
+
+                    <div class="inventory-row">
+
+                        <div class="inventory-id">
+                            <span class="inventory-label">ID</span>
+                            <span class="inventory-value">${row.mat_id}</span>
+                        </div>
+
+                        <div>
+                            <strong>Supplier</strong><br>
+                            ${supplierDropdown(row.mat_id, row.supplier_id)}
+                        </div>
+
+                        <div>
+                            <strong>Style</strong><br>
+                            ${styleDropdown(row.mat_id, row.style_id)}
+                        </div>
+
+                        <div>
+                            <strong>Material</strong><br>
+
+                            <a
+                                class="dark-inventory-link"
+                                href="Material_Details.html?mat_id=${row.mat_id}">
+
+                                ${row.style_table?.material_name ?? ""}
+
+                            </a>
+
+                        </div>
+
+                        <div>
+
+                            <strong>Total L(In)</strong><br>
+
+                            <input
+                                class="dark-inventory-input dark-inventory-readonly"
+                                readonly
+                                value="${row.t_length}">
+
+                        </div>
+
+                        <div>
+
+                            <strong>Total W(In)</strong><br>
+
+                            <input
+                                class="dark-inventory-input dark-inventory-readonly"
+                                readonly
+                                value="${row.t_width}">
+
+                        </div>
+
+                        <div>
+
+                            <strong>Total T(mm)</strong><br>
+
+                            <input
+                                class="dark-inventory-input dark-inventory-readonly"
+                                readonly
+                                value="${row.t_thickness}">
+
+                        </div>
+
+                        <div>
+
+                            <strong>Avl Qty</strong><br>
+
+                            <input
+                                class="dark-inventory-input"
+                                id="available-${row.mat_id}"
+                                type="number"
+                                step="0.001"
+                                value="${row.available_quantity}">
+
+                        </div>
+
+                        <div class="inventory-actions">
+
+                            <button
+                                class="btn btn-darkprimary"
+                                onclick="updateInventory(${row.mat_id})">
+
+                                Save
+
+                            </button>
+
+                            <button
+                                class="btn btn-danger"
+                                onclick="deleteInventory(${row.mat_id})">
+
+                                Delete
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                    `;
+
+                });
+
+                const totalPages = Math.ceil(inventoryData.length / rowsPerPage);
+
+                const pageText = `Page ${currentPage} of ${totalPages}`;
+
+
+                document.getElementById("pageInfo").textContent = pageText;
+                document.getElementById("pageInfoTop").textContent = pageText;
+
+                document.getElementById("prevPage").disabled = currentPage === 1;
+                document.getElementById("prevPageTop").disabled = currentPage === 1;
+
+                document.getElementById("nextPage").disabled = currentPage === totalPages;
+                document.getElementById("nextPageTop").disabled = currentPage === totalPages;
+
+            }
+
+            function previousPage() {
+
+                if (currentPage > 1) {
+
+                    currentPage--;
+
+                    renderInventory();
+
+                }
+
+            }
+
+            function nextPage() {
+
+                if (currentPage < Math.ceil(inventoryData.length / rowsPerPage)) {
+
+                    currentPage++;
+
+                    renderInventory();
+
+                }
+
+            }
+
+            window.addInventory = async function () {
+
+                const supplierId =
+                    Number(document.getElementById('new_supplier').value);
+
+                const styleId =
+                    Number(document.getElementById('new_style').value);
+
+                const availableQuantity =
+                    Number(document.getElementById('new_available_quantity').value);
+
+                const { data, error } = await supabase
+                    .schema(SCHEMA)
+                    .from('main_inv')
+                    .insert({
+
+                        available_quantity: availableQuantity,
+
+                        supplier_id: supplierId,
+                        style_id: styleId
+
+                    })
+                    .select()
+                    .single();
+
+                if (error) {
+
+                    showMessage(error.message, true);
+                    return;
+                }
+
+                showMessage('Material Added');
+
+                window.location.href =
+                    `Material_Details.html?mat_id=${data.mat_id}`;
+            }
+
+            window.updateInventory = async function (id) {
+
+                const { error } = await supabase
+                    .schema(SCHEMA)
+                    .from('main_inv')
+                    .update({
+
+                        supplier_id: Number(
+                            document.getElementById(`supplier-${id}`).value
+                        ),
+
+                        style_id: Number(
+                            document.getElementById(`style-${id}`).value
+                        ),
+
+                        available_quantity: Number(
+                            document.getElementById(`available-${id}`).value
+                        )
+
+                    })
+                    .eq('mat_id', id);
+
+                if (error) {
+
+                    showMessage(error.message, true);
+                    return;
+                }
+
+                showMessage('Material Updated');
+            }
+
+            window.deleteInventory = async function (id) {
+
+                if (!confirm('Delete this material?'))
+                    return;
+
+                const { error } = await supabase
+                    .schema(SCHEMA)
+                    .from('main_inv')
+                    .delete()
+                    .eq('mat_id', id);
+
+                if (error) {
+
+                    showMessage(error.message, true);
+                    return;
+                }
+
+                showMessage('Material Deleted');
+
+                loadInventory();
+            }
+
+            await loadSuppliers();
+            await loadStyles();
+            await loadInventory();
+
+            // ===========================
+            // SEARCH
+            // ===========================
+
+            document
+                .getElementById("searchBox")
+                .addEventListener("input", function () {
+
+                    const search =
+                        this.value
+                            .toLowerCase()
+                            .trim();
+
+                    inventoryData = originalInventory.filter(row =>
+
+                        String(row.mat_id).includes(search)
+
+                        ||
+
+                        (row.style_table?.style_name ?? "")
+                            .toLowerCase()
+                            .includes(search)
+
+                        ||
+
+                        (row.style_table?.material_name ?? "")
+                            .toLowerCase()
+                            .includes(search)
+
+                        ||
+
+                        (row.supplier?.supplier_name ?? "")
+                            .toLowerCase()
+                            .includes(search)
+
+                    );
+
+                    currentPage = 1;
+
+                    renderInventory();
+
+                });
+
+
+            // ===========================
+            // PAGINATION
+            // ===========================
+
+            [
+                "prevPage",
+                "prevPageTop"
+            ].forEach(id => {
+
+                document
+                    .getElementById(id)
+                    ?.addEventListener("click", previousPage);
+
+            });
+
+            [
+                "nextPage",
+                "nextPageTop"
+            ].forEach(id => {
+
+                document
+                    .getElementById(id)
+                    ?.addEventListener("click", nextPage);
+
+            });
+
+            const page = window.location.pathname
+                .split("/")
+                .pop()
+                .toLowerCase();
+
+            const map = {
+                "main_inv_page.html": "navInventory",
+                "supplier_page.html": "navSuppliers",
+                "style_page.html": "navStyles",
+                "payment_term.html": "navPayments",
+                "order_list.html": "navOrders",
+                "order_page.html": "navOrders"
+            };
+
+            const activeId = map[page];
+
+            if (activeId) {
+                document.getElementById(activeId)?.classList.add("active");
+            }
+
+            showLoggedInUser();
+
+
+        </script>
+
+    </div>
+
+</body>
+
+</html>
