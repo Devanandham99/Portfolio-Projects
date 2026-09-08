@@ -80,8 +80,12 @@
 
         checkAccess(["inventory"]);
         import { createClient }
-            from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-        const supabase = createClient('https://sodcjwjjoatmdxevhlxu.supabase.co', 'sb_publishable_1t6bZNG-7DnAzblZ1HJHig_I5j9ycFh');
+            from "ID1";
+
+        const supabase = createClient(
+            "ID2",
+            "ID3"
+        );
         const SCHEMA = 'inventory_system';
         const urlMatId =
             new URLSearchParams(window.location.search).get("mat_id");
