@@ -4,20 +4,20 @@
 
 const USERS = {
 
-    vinod_addanki: {
+    SCM: {
 
         password: "Inventory123",
         role: "inventory"
 
     },
 
-    karthikeyan: {
+    Inside_Sales: {
 
         password: "InsideSales123",
         role: "sales"
 
     },
-    claribelle: {
+    Sales: {
         password: "EISales123",
         role: "sales"
 
